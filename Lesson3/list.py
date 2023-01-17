@@ -48,3 +48,4 @@ my_lst6 = [1, 2, 3]
 a, b, c = my_lst6  # unpacking the list
 print(a, b, c)
 my_lst.clear()
+

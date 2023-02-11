@@ -1,5 +1,5 @@
-"""5. Прочитать сохранённый csv-файл и сохранить данные в excel-файл, кроме возраста - столбец с этими данными
-не нужен."""
+"""5. Прочитать сохранённый csv-файл и сохранить данные в excel-файл,
+кроме возраста - столбец с этими данными не нужен."""
 
 import csv
 import openpyxl
@@ -8,23 +8,31 @@ with open('csv_file.csv', newline='') as src_file:
     file_reader = csv.reader(src_file)
     data = list(file_reader)  # читаем файл в формате списка
 
-pop_age = [i.pop(2) for i in data]  # удаляем возвраст
-
 persons = []
-for i in range(1, len(data)):
-    persons.append('person ' + str(i))  # формируем список заголовков для эксель
+for i in range(len(data)):
+    if i == 0:
+        persons.append(None)
+    else:
+        persons.append('person ' + str(i))
+# формируем список заголовков для эксель
+
+data_flip = []
+for i in range(len(data[0])):
+    inner_lst = []
+    if i == 2:
+        continue
+    for j in range(len(data)):
+        inner_lst.append(data[j][i])
+    data_flip.append(inner_lst)
+data_flip.insert(0, persons)
 
 book = openpyxl.Workbook()  # создаем файл эксель
 sheet = book.active
 
-for column in range(2, len(persons) + 2):
-    sheet.cell(1, column).value = persons[column - 2]  # записываем заголовки в эксель
-
-for row in range(2, len(data[0]) + 2):
-    for column in range(1, len(data) + 1):
-        sheet.cell(row, column).value = data[column - 1][row - 2]  # записываем данные в эксель
+for item in data_flip:
+    sheet.append(item)
 
 book.save('csv_to_excel.xlsx')
 book.close()
 
-check_file = print('Проверьте файл "csv_to_excel.xlsx".')
+print('Проверьте файл "csv_to_excel.xlsx".')

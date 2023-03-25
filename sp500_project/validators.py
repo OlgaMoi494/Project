@@ -3,9 +3,9 @@ import string
 
 
 def decor_validate(validator_function):
-    def wrap(check_input):
+    def wrap(check_input, *args, **kwargs):
         try:
-            validator_function(check_input)
+            validator_function(check_input, *args, **kwargs)
             return True
         except IncorrectUserInputError as err:
             print(err)
@@ -14,7 +14,7 @@ def decor_validate(validator_function):
 
 
 @decor_validate
-def validate_user_choice(check_input):
+def validate_user_choice(check_input, *args, **kwargs):
     if not check_input.isdigit():
         raise IncorrectUserInputError('Choice must be digit.')
     if check_input not in map(str, range(1, 12)):
@@ -22,7 +22,7 @@ def validate_user_choice(check_input):
 
 
 @decor_validate
-def validate_symbol_input(check_input):
+def validate_symbol_input(check_input, *args, **kwargs):
     if len(check_input) not in range(3, 7):
         raise IncorrectUserInputError(
             'Length of symbol should be from 3 to 6 letters.')
@@ -32,21 +32,21 @@ def validate_symbol_input(check_input):
 
 
 @decor_validate
-def validate_name_input(check_input):
+def validate_name_input(check_input, *args, **kwargs):
     if len(check_input) not in range(3, 51):
         raise IncorrectUserInputError(
             'Length of company name should be from 3 to 50 letters.')
 
 
 @decor_validate
-def validate_price(check_input):
+def validate_price(check_input, *args, **kwargs):
     if check_input not in map(str, range(1001)):
         raise IncorrectUserInputError(
             "Price should be float positive number to max 1000.")
 
 
 @decor_validate
-def validate_number_of_entries(check_input):
+def validate_number_of_entries(check_input, *args, **kwargs):
     if not check_input.isdigit:
         raise IncorrectUserInputError('Number must be digit.')
 

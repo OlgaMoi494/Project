@@ -3,18 +3,6 @@ from faker import Faker
 import random
 import string
 from time import time
-from data_access import (
-    read_data,
-    read_lst_of_symbols,
-    read_lst_of_names,
-    read_lst_of_sectors,
-    write_new_company,
-    write_updates,
-    rewrite_from_temp_file,
-    write_delete_company,
-    clear_the_data,
-    write_random_data
-)
 from errors import IncorrectUserInputError
 from validators import decor_validate
 
@@ -35,9 +23,11 @@ def cache_check(storage_time_sec=30):
                 print('There are cache data provided!')
                 print(cache_dct[search_item][0])
                 return cache_dct[search_item][0]
-            else:
+            else:  # TODO убрать else
                 return function(search_item, *args, **kwargs)
+
         return wrapper
+
     return inner
 
 
@@ -51,10 +41,10 @@ def company_info_dct(dct_entry: dict) -> dict:
 
 
 @cache_check(30)
-def info_by_name(search_item: str) -> list:
+def info_by_name(search_item: str, db_connector) -> list:
     '''Returns list of company dicts selected by name'''
     lst_of_companies_selected = []
-    for item in read_data():
+    for item in db_connector.read_data():
         if search_item in item['Name'].lower():
             lst_of_companies_selected.append(company_info_dct(item))
     print(f'Companies selected by name: {lst_of_companies_selected}')
@@ -63,10 +53,10 @@ def info_by_name(search_item: str) -> list:
 
 
 @cache_check(30)
-def info_by_symbol(search_item: str) -> list:
+def info_by_symbol(search_item: str, db_connector) -> list:
     '''Returns list of company dicts selected by symbol'''
     lst_of_companies_selected_by_symbol = []
-    for item in read_data():
+    for item in db_connector.read_data():
         if search_item in item['Symbol'].lower():
             lst_of_companies_selected_by_symbol.append(company_info_dct(item))
     print(
@@ -76,10 +66,10 @@ def info_by_symbol(search_item: str) -> list:
 
 
 @cache_check(30)
-def info_by_sector(search_item: str) -> list:
+def info_by_sector(search_item: str, db_connector) -> list:
     '''Returns list of company names selected by sector'''
     lst_of_companies_selected_by_sector = []
-    for item in read_data():
+    for item in db_connector.read_data():
         if search_item in item['Sector'].lower():
             lst_of_companies_selected_by_sector.append(item['Name'])
     print(
@@ -88,20 +78,20 @@ def info_by_sector(search_item: str) -> list:
     return lst_of_companies_selected_by_sector
 
 
-def average_price() -> float:
+def average_price(db_connector) -> float:
     '''Returns average stock price of all the companies'''
     prices = []
-    for i in read_data():
+    for i in db_connector.read_data():
         prices.append(float(i['Price']))
     print(f'Average stock price of the companies: {round(mean(prices), 2)}')
     return mean(prices)
 
 
-def top10_companies() -> list:
+def top10_companies(db_connector) -> list:
     '''Returns top10 companies ranged on stock price'''
     prices = []
     names = []
-    for i in read_data():
+    for i in db_connector.read_data():
         prices.append(float(i['Price']))
         names.append(i['Name'])
     companies_prices_lst = list(zip(names, prices))
@@ -113,61 +103,63 @@ def top10_companies() -> list:
 
 
 @decor_validate
-def validate_symbol_not_in_db(check_input):
-    if check_input in read_lst_of_symbols():
+def validate_symbol_not_in_db(check_input, db_connector):
+    if check_input in db_connector.read_lst_of_symbols():
         raise IncorrectUserInputError('Symbol entered already exists.')
 
 
 @decor_validate
-def validate_symbol_in_db(check_input):
-    if check_input not in read_lst_of_symbols():
+def validate_symbol_in_db(check_input, db_connector):
+    if check_input not in db_connector.read_lst_of_symbols():
         raise IncorrectUserInputError('No symbol entered found.')
 
 
 @decor_validate
-def validate_name_not_in_db(check_input):
-    if check_input in read_lst_of_names():
+def validate_name_not_in_db(check_input, db_connector):
+    if check_input in db_connector.read_lst_of_names():
         raise IncorrectUserInputError('Company name entered already exists.')
 
 
 @decor_validate
-def validate_sector_input(check_input):
-    if check_input not in read_lst_of_sectors():
+def validate_sector_input(check_input, db_connector):
+    if check_input not in db_connector.read_lst_of_sectors():
         raise IncorrectUserInputError("Sector entered doesn't exist.")
 
 
-def add_new_company(symbol, name, sector, price):
+def add_new_company(symbol, name, sector, price, db_connector):
     new_company_entry = [symbol, name, sector, price] + [None] * 10
-    write_new_company(new_company_entry)
+    db_connector.write_new_company(new_company_entry)
     print(
         f'Added new company: symbol: {symbol}, name: {name},'
         f'sector: {sector}, price: {price}')
 
 
-def update_name(symbol, new_name):
-    filter_elem = list(filter(lambda x: x['Symbol'] == symbol, read_data()))[0]
+def update_name(symbol, new_name, db_connector):
+    filter_elem = \
+        list(filter(lambda x: x['Symbol'] == symbol, db_connector.read_data(
+        )))[0]
     print(filter_elem)
     filter_elem['Name'] = new_name
-    write_updates(filter_elem)
-    rewrite_from_temp_file()
+    db_connector.write_updates(filter_elem)
+    db_connector.rewrite_from_temp_file()
     print(filter_elem)
     print('The name is updated in DataBase')
 
 
-def delete_company(symbol):
+def delete_company(symbol, db_connector):
     entry_to_delete = list(filter(
-        lambda x: x['Symbol'] == symbol, read_data()))[0]
-    write_delete_company(entry_to_delete)
-    rewrite_from_temp_file()
+        lambda x: x['Symbol'] == symbol, db_connector.read_data()))[0]
+    db_connector.write_delete_company(entry_to_delete)
+    db_connector.rewrite_from_temp_file()
     print('Selected entry was deleted.')
 
 
-def truncate_all():
-    clear_the_data()
+def truncate_all(db_connector):
+    db_connector.clear_the_data()
     print('All data cleared!')
 
 
-def random_data(number_of_entries):
+def random_data(number_of_entries, db_connector):
     number_of_entries = int(number_of_entries)
     unique_sectors = ['Telecommunication Services', 'Utilities', 'Energy',
                       'Information Technology', 'Health Care', 'Industrials',
@@ -199,4 +191,4 @@ def random_data(number_of_entries):
     for i in lst_of_entries:
         i.extend(lst_nones)
         full_lst_of_entries.append(i)
-    write_random_data(headers, full_lst_of_entries)
+    db_connector.write_random_data(headers, full_lst_of_entries)

@@ -1,0 +1,1 @@
+[{"mug": ["name", "price", "color"]}, {"smartphone": ["name", "price", "cam_number"]}, {"table": ["name", "price", "color"]}, {"toy": ["name", "price", "purpose_age"]}]
